@@ -8,9 +8,29 @@ services:
     environment:      
       - PATH=/root/.dotnet/tools:$PATH
       - ASPNETCORE_ENVIRONMENT=Development
+      - DBSETTINGS__HOST=db
+      - DBSETTINGS__NAME=devdb
+      - DBSETTINGS__USER=devuser
+      - DBSETTINGS__PASSWORD=changeme
     volumes:
       - ./Api:/Api
       - ./Scripts:/Scripts
       - ~/.vsdbg:/remote_debugger:rw
     working_dir: /Api
-    command: sh -c "dotnet watch run --project ./Api/Api.csproj --urls http://+:5000"
+    command: sh -c "/Scripts/wait-for-it.sh db:5432 -- dotnet watch run --project ./Api/Api.csproj --urls http://+:5000"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine3.17
+    ports:
+      - 5432:5432
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=changeme
+
+volumes:
+  dev-db-data:
