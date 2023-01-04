@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  api:
+    image: mcr.microsoft.com/dotnet/sdk:7.0-alpine3.17
+    ports:
+      - 5000:5000
+    environment:      
+      - PATH=/root/.dotnet/tools:$PATH
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./Api:/Api
+      - ./Scripts:/Scripts
+      - ~/.vsdbg:/remote_debugger:rw
+    working_dir: /Api
+    command: sh -c "dotnet watch run --project ./Api/Api.csproj --urls http://+:5000"
