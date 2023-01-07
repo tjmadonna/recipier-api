@@ -43,4 +43,29 @@ public class AuthController : ControllerBase
             Data: new SignInResponse { Access = accessToken.Value, Refresh = refreshToken.Value }
         ));
     }
+
+    [HttpPost(ApiRoutes.Auth.RefreshToken)]
+    public IActionResult RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        var validateResult = _authService.ValidateRefreshToken(request.Refresh);
+        if (validateResult.IsFailure)
+            return Unauthorized(new ApiResponse<SignInResponse>(
+                Errors: new ErrorResponse[1] {
+                    new ErrorResponse("Credentials", new string[1] {"Unable to refresh token with those credentials."})
+                }
+            ));
+
+        var userId = validateResult.Value;
+        var accessToken = _authService.CreateAccessToken(userId);
+        if (accessToken.IsFailure)
+            return Unauthorized(new ApiResponse<SignInResponse>(
+                Errors: new ErrorResponse[1] {
+                    new ErrorResponse("Credentials", new string[1] {"Unable to refresh token with those credentials."})
+                }
+            ));
+
+        return Ok(new ApiResponse<RefreshTokenResponse>(
+            Data: new RefreshTokenResponse { Access = accessToken.Value }
+        ));
+    }
 }

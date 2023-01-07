@@ -14,5 +14,7 @@ public static class ApiRoutes
     public static class Auth
     {
         public const string SignIn = Base + "/auth";
+
+        public const string RefreshToken = Base + "/auth/refresh";
     }
 }
