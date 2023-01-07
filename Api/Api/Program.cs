@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Data.Entities;
+using Api.Features.V1.User;
 using Api.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +44,9 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 .AddSignInManager<SignInManager<AppUser>>()
 .AddUserManager<UserManager<AppUser>>()
 .AddDefaultTokenProviders();
+
+// Services
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
