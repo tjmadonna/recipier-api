@@ -12,7 +12,8 @@ services:
       - DBSETTINGS__NAME=devdb
       - DBSETTINGS__USER=devuser
       - DBSETTINGS__PASSWORD=changeme
-      - JWTSETTINGS__SECRETKEY=VeryLongSuperSecureSecretKeyForJwts
+      - JWTSETTINGS__ACCESSSECRETKEY=VeryLongSuperSecureSecretKeyForJwts
+      - JWTSETTINGS__REFRESHSECRETKEY=VeryLongRefreshSuperSecureSecretKeyForJwts
       - JWTSETTINGS__ISSUER=localhost
       - JWTSETTINGS__AUDIENCE=com.example.recipier
       - JWTSETTINGS__ACCESSTOKENLIFETIME=00:15:00
