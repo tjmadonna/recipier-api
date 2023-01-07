@@ -5,4 +5,6 @@ public interface IAuthService
     string CreateAccessToken(Guid userId);
 
     Task<string?> CreateRefreshTokenAsync(Guid userId);
+
+    Guid? ValidateRefreshToken(string token);
 }

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Api.Data;
 using Api.Data.Entities;
+using Api.Features.V1.Core.Extensions;
 using Api.Settings;
 using Microsoft.IdentityModel.Tokens;
 
@@ -12,12 +13,23 @@ public class AuthService : IAuthService
 {
     private readonly DataContext _dataContext;
 
+    private readonly TokenValidationParameters _refreshTokenValidationParameters;
+
     private readonly JwtSettings _jwtSettings;
 
-    public AuthService(DataContext dataContext, JwtSettings jwtSettings)
+    private readonly ILogger<AuthService> _logger;
+
+    public AuthService(
+        DataContext dataContext,
+        TokenValidationParameters refreshTokenValidationParameters,
+        JwtSettings jwtSettings,
+        ILogger<AuthService> logger
+    )
     {
         _dataContext = dataContext;
+        _refreshTokenValidationParameters = refreshTokenValidationParameters;
         _jwtSettings = jwtSettings;
+        _logger = logger;
     }
 
     public string CreateAccessToken(Guid userId)
@@ -49,6 +61,43 @@ public class AuthService : IAuthService
             _jwtSettings.RefreshSecretKey,
             _jwtSettings.RefreshTokenLifetime
         );
+    }
+
+    public Guid? ValidateRefreshToken(string token)
+    {
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.RefreshSecretKey)),
+                ValidateIssuer = true,
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha512 },
+                ValidateAudience = true,
+                ValidAudience = _jwtSettings.Audience,
+                RequireExpirationTime = true,
+                ValidateLifetime = true,
+                ValidTypes = new[] { _jwtSettings.RefreshType },
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+
+            var userId = claimsPrincipal.GetSub();
+            if (userId == null)
+                return null;
+
+            var tokenExists = _dataContext.RefreshTokens.Any(r => r.Jti == userId);
+            if (!tokenExists)
+                return null;
+
+            return userId;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return null;
+        }
     }
 
     private string CreateToken(Guid userId, string type, Guid jti, string secret, TimeSpan lifetime)
