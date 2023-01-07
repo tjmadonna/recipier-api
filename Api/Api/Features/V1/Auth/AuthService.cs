@@ -71,7 +71,7 @@ public class AuthService : IAuthService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.RefreshSecretKey)),
@@ -86,13 +86,18 @@ public class AuthService : IAuthService
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
 
-            var userId = claimsPrincipal.GetSub();
-            if (userId == null)
-                return Result.Failure<Guid>("Unable to get sub claim from claims principal");
+            var validatedJwtToken = (JwtSecurityToken)validatedToken;
+            var jti = validatedJwtToken.Claims.GetJti();
+            if (jti == null)
+                return Result.Failure<Guid>("Unable to get jti claim from list of claims");
 
-            var tokenExists = _dataContext.RefreshTokens.Any(r => r.Jti == userId);
+            var tokenExists = _dataContext.RefreshTokens.Any(r => r.Jti == jti);
             if (!tokenExists)
-                return Result.Failure<Guid>("Unable to find token in approved tokens");
+                return Result.Failure<Guid>("Unable to find token in list of approved tokens");
+
+            var userId = validatedJwtToken.Claims.GetSub();
+            if (userId == null)
+                return Result.Failure<Guid>("Unable to get sub claim from list of claims");
 
             return Result.Success<Guid>((Guid)userId);
         }
