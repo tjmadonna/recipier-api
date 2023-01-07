@@ -6,31 +6,45 @@ using Api.Data.Entities;
 using Api.Features.V1.Core;
 using Api.Features.V1.Core.Extensions;
 using Api.Settings;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Api.Features.V1.Auth;
 
 public class AuthService : IAuthService
 {
-    private readonly DataContext _dataContext;
+    private readonly UserManager<AppUser> _userManager;
 
-    private readonly TokenValidationParameters _refreshTokenValidationParameters;
+    private readonly DataContext _dataContext;
 
     private readonly JwtSettings _jwtSettings;
 
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
+        UserManager<AppUser> userManager,
         DataContext dataContext,
-        TokenValidationParameters refreshTokenValidationParameters,
         JwtSettings jwtSettings,
         ILogger<AuthService> logger
     )
     {
+        _userManager = userManager;
         _dataContext = dataContext;
-        _refreshTokenValidationParameters = refreshTokenValidationParameters;
         _jwtSettings = jwtSettings;
         _logger = logger;
+    }
+
+    public async Task<Result<Guid>> AuthenticateAsync(string email, string password)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+            return Result.Failure<Guid>("Unable to find user with that email.");
+
+        var checkPasswordSuccessful = await _userManager.CheckPasswordAsync(user, password);
+        if (!checkPasswordSuccessful)
+            return Result.Failure<Guid>("Passwords do not match.");
+
+        return Result.Success(user.Id);
     }
 
     public Result<string> CreateAccessToken(Guid userId)
