@@ -1,10 +1,12 @@
+using Api.Features.V1.Core;
+
 namespace Api.Features.V1.Auth;
 
 public interface IAuthService
 {
-    string CreateAccessToken(Guid userId);
+    Result<string> CreateAccessToken(Guid userId);
 
-    Task<string?> CreateRefreshTokenAsync(Guid userId);
+    Task<Result<string>> CreateRefreshTokenAsync(Guid userId);
 
-    Guid? ValidateRefreshToken(string token);
+    Result<Guid> ValidateRefreshToken(string token);
 }

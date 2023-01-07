@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Api.Data;
 using Api.Data.Entities;
+using Api.Features.V1.Core;
 using Api.Features.V1.Core.Extensions;
 using Api.Settings;
 using Microsoft.IdentityModel.Tokens;
@@ -32,17 +33,18 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public string CreateAccessToken(Guid userId)
+    public Result<string> CreateAccessToken(Guid userId)
     {
-        return CreateToken(
+        var token = CreateToken(
             userId,
             _jwtSettings.AccessType,
             Guid.NewGuid(),
             _jwtSettings.AccessSecretKey,
             _jwtSettings.AccessTokenLifetime
         );
+        return Result.Success(token);
     }
-    public async Task<string?> CreateRefreshTokenAsync(Guid userId)
+    public async Task<Result<string>> CreateRefreshTokenAsync(Guid userId)
     {
         var jti = Guid.NewGuid();
         await _dataContext.RefreshTokens.AddAsync(new RefreshToken
@@ -52,18 +54,19 @@ public class AuthService : IAuthService
             UserId = userId
         });
         if (await _dataContext.SaveChangesAsync() < 1)
-            return null;
+            return Result.Failure<string>($"Unable to save refresh token with jti {jti}");
 
-        return CreateToken(
+        var token = CreateToken(
             userId,
             _jwtSettings.RefreshType,
             jti,
             _jwtSettings.RefreshSecretKey,
             _jwtSettings.RefreshTokenLifetime
         );
+        return Result.Success(token);
     }
 
-    public Guid? ValidateRefreshToken(string token)
+    public Result<Guid> ValidateRefreshToken(string token)
     {
         try
         {
@@ -85,18 +88,18 @@ public class AuthService : IAuthService
 
             var userId = claimsPrincipal.GetSub();
             if (userId == null)
-                return null;
+                return Result.Failure<Guid>("Unable to get sub claim from claims principal");
 
             var tokenExists = _dataContext.RefreshTokens.Any(r => r.Jti == userId);
             if (!tokenExists)
-                return null;
+                return Result.Failure<Guid>("Unable to find token in approved tokens");
 
-            return userId;
+            return Result.Success<Guid>((Guid)userId);
         }
         catch (Exception e)
         {
             _logger.LogError(e, e.Message);
-            return null;
+            return Result.Failure<Guid>(e.Message); ;
         }
     }
 
@@ -126,5 +129,4 @@ public class AuthService : IAuthService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
-
 }
