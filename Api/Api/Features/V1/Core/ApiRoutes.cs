@@ -10,4 +10,9 @@ public static class ApiRoutes
 
         public const string Me = Base + "/user/me";
     }
+
+    public static class Auth
+    {
+        public const string SignIn = Base + "/auth";
+    }
 }
