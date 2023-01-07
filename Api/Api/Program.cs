@@ -12,9 +12,16 @@ builder.Configuration.AddEnvironmentVariables();
 var dbSettings = builder.Configuration
     .GetSection(nameof(DbSettings))
     .Get<DbSettings>();
+var jwtSettings = builder.Configuration
+    .GetSection(nameof(JwtSettings))
+    .Get<JwtSettings>();
 
 if (dbSettings == null)
     throw new Exception("DbSettings cannot be null");
+if (jwtSettings == null)
+    throw new Exception("JwtSettings cannot be null");
+
+builder.Services.AddSingleton<JwtSettings>(jwtSettings);
 
 // Add controllers
 builder.Services.AddControllers(options =>
