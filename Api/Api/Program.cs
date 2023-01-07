@@ -1,9 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using Api.Data;
 using Api.Data.Entities;
 using Api.Features.V1.User;
 using Api.Settings;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -51,6 +55,34 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 .AddSignInManager<SignInManager<AppUser>>()
 .AddUserManager<UserManager<AppUser>>()
 .AddDefaultTokenProviders();
+
+// Jwt
+var tokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.SecretKey)),
+    ValidateIssuer = true,
+    ValidIssuer = jwtSettings.Issuer,
+    ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha512 },
+    ValidateAudience = true,
+    ValidAudience = jwtSettings.Audience,
+    RequireExpirationTime = true,
+    ValidateLifetime = true,
+    ClockSkew = TimeSpan.Zero
+};
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.TokenValidationParameters = tokenValidationParameters;
+});
+JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
 // Services
 builder.Services.AddScoped<IUserService, UserService>();
