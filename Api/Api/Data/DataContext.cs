@@ -7,6 +7,8 @@ namespace Api.Data;
 
 public class DataContext : IdentityDbContext<AppUser, AppRole, Guid>
 {
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = default!;
+
     public DataContext(DbContextOptions options) : base(options)
     {
     }
