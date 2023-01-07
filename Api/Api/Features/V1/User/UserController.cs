@@ -42,6 +42,18 @@ public class UserController : ControllerBase
     [HttpGet(ApiRoutes.User.Me)]
     public async Task<IActionResult> GetMeAsync()
     {
-        return Ok();
+        var userId = Guid.Empty;
+        var userResult = await _userService.GetUserInfoAsync(userId);
+        if (userResult.IsFailure)
+            return Unauthorized(new ApiResponse<CreateUserResponse>(
+                Errors: new ErrorResponse[1] {
+                    new ErrorResponse("Credentials", new string[1] {"Unable to get user with those credentials."})
+                }
+            ));
+
+        var user = userResult.Value;
+        return Ok(new ApiResponse<GetUserResponse>(
+            Data: new GetUserResponse { Id = user.Id, Email = user.Email }
+        ));
     }
 }
