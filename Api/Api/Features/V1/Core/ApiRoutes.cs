@@ -18,5 +18,7 @@ public static class ApiRoutes
         public const string RefreshToken = Base + "/auth/refresh";
 
         public const string SignOut = Base + "/auth/signout";
+
+        public const string SignOutAll = Base + "/auth/signoutall";
     }
 }

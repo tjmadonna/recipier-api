@@ -74,4 +74,18 @@ public class AuthController : ControllerBase
             Data: "Signed out successfully."
         ));
     }
+
+    [HttpPost(ApiRoutes.Auth.SignOutAll)]
+    public async Task<IActionResult> SignOutAllAsync([FromBody] SignOutRequest request)
+    {
+        var validateResult = await _authService.DeleteAllRefreshTokensAsync(request.Refresh);
+        if (validateResult.IsFailure)
+            return Unauthorized(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to sign out with those credentials." } }
+            ));
+
+        return Ok(new SuccessResponse<string>(
+            Data: "Signed out of all sessions successfully."
+        ));
+    }
 }

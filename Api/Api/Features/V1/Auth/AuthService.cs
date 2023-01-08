@@ -7,6 +7,7 @@ using Api.Features.V1.Core;
 using Api.Features.V1.Core.Extensions;
 using Api.Settings;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Api.Features.V1.Auth;
@@ -95,6 +96,31 @@ public class AuthService : IAuthService
                 _dataContext.RefreshTokens.Remove(refreshToken);
                 if (await _dataContext.SaveChangesAsync() < 1)
                     return Result.Failure($"Unable to remove refresh token.");
+            }
+            return Result.Success();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Result.Failure(e.Message); ;
+        }
+    }
+
+    public async Task<Result> DeleteAllRefreshTokensAsync(string token)
+    {
+        try
+        {
+            var validatedJwtToken = GetValidatedRefreshJwtToken(token);
+            var userId = validatedJwtToken.Claims.GetSub();
+            if (userId == null)
+                return Result.Failure("Unable to get sub claim from list of claims.");
+
+            var refreshTokens = _dataContext.RefreshTokens.Where(r => r.UserId == userId);
+            if (refreshTokens != null)
+            {
+                _dataContext.RefreshTokens.RemoveRange(refreshTokens);
+                if (await _dataContext.SaveChangesAsync() < 1)
+                    return Result.Failure($"Unable to remove refresh tokens.");
             }
             return Result.Success();
         }
