@@ -172,7 +172,7 @@ public class AuthService : IAuthService
             ValidAudience = _jwtSettings.Audience,
             RequireExpirationTime = true,
             ValidateLifetime = true,
-            ValidTypes = new[] { _jwtSettings.RefreshType },
+            ValidTypes = new[] { "JWT" },
             ClockSkew = TimeSpan.Zero
         }, out SecurityToken validatedToken);
 

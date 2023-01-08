@@ -69,7 +69,7 @@ var tokenValidationParameters = new TokenValidationParameters
     ValidAudience = jwtSettings.Audience,
     RequireExpirationTime = true,
     ValidateLifetime = true,
-    ValidTypes = new[] { jwtSettings.AccessType },
+    ValidTypes = new[] { "JWT" },
     ClockSkew = TimeSpan.Zero
 };
 

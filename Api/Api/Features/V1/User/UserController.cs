@@ -1,6 +1,9 @@
 using Api.Features.V1.Core;
+using Api.Features.V1.Core.Extensions;
 using Api.Features.V1.User.Requests;
 using Api.Features.V1.User.Responses;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Features.V1.User;
@@ -37,11 +40,17 @@ public class UserController : ControllerBase
         ));
     }
 
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpGet(ApiRoutes.User.Me)]
     public async Task<IActionResult> GetMeAsync()
     {
-        var userId = Guid.Empty;
-        var userResult = await _userService.GetUserInfoAsync(userId);
+        var userId = User.GetSub();
+        if (userId == null)
+            return Unauthorized(new FailureResponse(
+               Errors: new { Credentials = new string[1] { "Unable to get user with those credentials." } }
+           ));
+
+        var userResult = await _userService.GetUserInfoAsync((Guid)userId);
         if (userResult.IsFailure)
             return Unauthorized(new FailureResponse(
                 Errors: new { Credentials = new string[1] { "Unable to get user with those credentials." } }
