@@ -86,11 +86,15 @@ public class AuthService : IAuthService
         try
         {
             var validatedJwtToken = GetValidatedRefreshJwtToken(token);
+
+            var userId = validatedJwtToken.Claims.GetSub();
+            if (userId == null)
+                return Result.Failure("Unable to get sub claim from list of claims.");
             var jti = validatedJwtToken.Claims.GetJti();
             if (jti == null)
                 return Result.Failure("Unable to get jti claim from list of claims.");
 
-            var refreshToken = _dataContext.RefreshTokens.FirstOrDefault(r => r.Jti == jti);
+            var refreshToken = _dataContext.RefreshTokens.FirstOrDefault(r => r.Jti == jti && r.UserId == userId);
             if (refreshToken != null)
             {
                 _dataContext.RefreshTokens.Remove(refreshToken);
@@ -136,18 +140,17 @@ public class AuthService : IAuthService
         try
         {
             var validatedJwtToken = GetValidatedRefreshJwtToken(token);
+            var userId = validatedJwtToken.Claims.GetSub();
+            if (userId == null)
+                return Result.Failure<Guid>("Unable to get sub claim from list of claims");
 
             var jti = validatedJwtToken.Claims.GetJti();
             if (jti == null)
                 return Result.Failure<Guid>("Unable to get jti claim from list of claims");
 
-            var tokenExists = _dataContext.RefreshTokens.Any(r => r.Jti == jti);
+            var tokenExists = _dataContext.RefreshTokens.Any(r => r.Jti == jti && r.UserId == userId);
             if (!tokenExists)
                 return Result.Failure<Guid>("Unable to find token in list of approved tokens");
-
-            var userId = validatedJwtToken.Claims.GetSub();
-            if (userId == null)
-                return Result.Failure<Guid>("Unable to get sub claim from list of claims");
 
             return Result.Success<Guid>((Guid)userId);
         }
