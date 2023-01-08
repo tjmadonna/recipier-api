@@ -10,5 +10,7 @@ public interface IAuthService
 
     Task<Result<string>> CreateRefreshTokenAsync(Guid userId);
 
+    Task<Result> DeleteRefreshTokenAsync(string token);
+
     Result<Guid> ValidateRefreshToken(string token);
 }

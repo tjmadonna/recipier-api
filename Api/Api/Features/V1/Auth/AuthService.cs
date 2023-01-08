@@ -80,27 +80,36 @@ public class AuthService : IAuthService
         return Result.Success(token);
     }
 
+    public async Task<Result> DeleteRefreshTokenAsync(string token)
+    {
+        try
+        {
+            var validatedJwtToken = GetValidatedJwtToken(token);
+            var jti = validatedJwtToken.Claims.GetJti();
+            if (jti == null)
+                return Result.Failure("Unable to get jti claim from list of claims.");
+
+            var refreshToken = _dataContext.RefreshTokens.FirstOrDefault(r => r.Jti == jti);
+            if (refreshToken != null)
+            {
+                _dataContext.RefreshTokens.Remove(refreshToken);
+                if (await _dataContext.SaveChangesAsync() < 1)
+                    return Result.Failure($"Unable to remove refresh token.");
+            }
+            return Result.Success();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, e.Message);
+            return Result.Failure(e.Message); ;
+        }
+    }
+
     public Result<Guid> ValidateRefreshToken(string token)
     {
         try
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.RefreshSecretKey)),
-                ValidateIssuer = true,
-                ValidIssuer = _jwtSettings.Issuer,
-                ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha512 },
-                ValidateAudience = true,
-                ValidAudience = _jwtSettings.Audience,
-                RequireExpirationTime = true,
-                ValidateLifetime = true,
-                ValidTypes = new[] { _jwtSettings.RefreshType },
-                ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
-
-            var validatedJwtToken = (JwtSecurityToken)validatedToken;
+            var validatedJwtToken = GetValidatedJwtToken(token);
             var jti = validatedJwtToken.Claims.GetJti();
             if (jti == null)
                 return Result.Failure<Guid>("Unable to get jti claim from list of claims");
@@ -147,5 +156,26 @@ public class AuthService : IAuthService
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
+    }
+
+    private JwtSecurityToken GetValidatedJwtToken(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        tokenHandler.ValidateToken(token, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.RefreshSecretKey)),
+            ValidateIssuer = true,
+            ValidIssuer = _jwtSettings.Issuer,
+            ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha512 },
+            ValidateAudience = true,
+            ValidAudience = _jwtSettings.Audience,
+            RequireExpirationTime = true,
+            ValidateLifetime = true,
+            ValidTypes = new[] { _jwtSettings.RefreshType },
+            ClockSkew = TimeSpan.Zero
+        }, out SecurityToken validatedToken);
+
+        return (JwtSecurityToken)validatedToken;
     }
 }
