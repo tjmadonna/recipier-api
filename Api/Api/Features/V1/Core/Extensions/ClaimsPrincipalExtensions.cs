@@ -33,4 +33,14 @@ public static class ClaimsPrincipalExtensions
             return null;
         return guid;
     }
+
+    public static string? GetTyp(this IEnumerable<Claim> claims)
+    {
+        var claim = claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Typ);
+        if (claim == null)
+            return null;
+
+        return claim.Value;
+    }
+
 }

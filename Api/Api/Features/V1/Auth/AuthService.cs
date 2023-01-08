@@ -84,7 +84,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            var validatedJwtToken = GetValidatedJwtToken(token);
+            var validatedJwtToken = GetValidatedRefreshJwtToken(token);
             var jti = validatedJwtToken.Claims.GetJti();
             if (jti == null)
                 return Result.Failure("Unable to get jti claim from list of claims.");
@@ -109,7 +109,8 @@ public class AuthService : IAuthService
     {
         try
         {
-            var validatedJwtToken = GetValidatedJwtToken(token);
+            var validatedJwtToken = GetValidatedRefreshJwtToken(token);
+
             var jti = validatedJwtToken.Claims.GetJti();
             if (jti == null)
                 return Result.Failure<Guid>("Unable to get jti claim from list of claims");
@@ -158,7 +159,7 @@ public class AuthService : IAuthService
         return tokenHandler.WriteToken(token);
     }
 
-    private JwtSecurityToken GetValidatedJwtToken(string token)
+    private JwtSecurityToken GetValidatedRefreshJwtToken(string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         tokenHandler.ValidateToken(token, new TokenValidationParameters
@@ -174,7 +175,12 @@ public class AuthService : IAuthService
             ValidateLifetime = true,
             ValidTypes = new[] { "JWT" },
             ClockSkew = TimeSpan.Zero
-        }, out SecurityToken validatedToken);
+        }, out SecurityToken securityToken);
+
+        var validatedToken = (JwtSecurityToken)securityToken;
+        var type = validatedToken.Claims.GetTyp();
+        if (type == null || type != _jwtSettings.RefreshType)
+            throw new Exception("Provided token is not a refresh token.");
 
         return (JwtSecurityToken)validatedToken;
     }

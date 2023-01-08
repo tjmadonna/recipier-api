@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Api.Data;
 using Api.Data.Entities;
+using Api.Events;
 using Api.Features.V1.Auth;
 using Api.Features.V1.User;
 using Api.Settings;
@@ -84,8 +85,10 @@ builder.Services.AddAuthentication(options =>
 {
     options.SaveToken = true;
     options.TokenValidationParameters = tokenValidationParameters;
+    options.EventsType = typeof(AuthEvents);
 });
 JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+builder.Services.AddScoped<AuthEvents>();
 
 // Services
 builder.Services.AddScoped<IUserService, UserService>();
