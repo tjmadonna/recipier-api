@@ -7,6 +7,8 @@ using Api.Features.V1.Auth;
 using Api.Features.V1.User;
 using Api.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HostFiltering;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,12 +20,17 @@ builder.Configuration.AddEnvironmentVariables();
 var dbSettings = builder.Configuration
     .GetSection(nameof(DbSettings))
     .Get<DbSettings>();
+var hostSettings = builder.Configuration
+    .GetSection(nameof(HostSettings))
+    .Get<HostSettings>();
 var jwtSettings = builder.Configuration
     .GetSection(nameof(JwtSettings))
     .Get<JwtSettings>();
 
 if (dbSettings == null)
     throw new Exception("DbSettings cannot be null");
+if (hostSettings == null)
+    throw new Exception("HostSettings cannot be null");
 if (jwtSettings == null)
     throw new Exception("JwtSettings cannot be null");
 
@@ -33,6 +40,10 @@ builder.Services.AddSingleton<JwtSettings>(jwtSettings);
 builder.Services.AddControllers(options =>
 {
     options.SuppressAsyncSuffixInActionNames = false;
+});
+builder.Services.Configure<HostFilteringOptions>(options =>
+{
+    options.AllowedHosts = hostSettings.AllowedHosts;
 });
 
 // Database
@@ -74,7 +85,6 @@ var tokenValidationParameters = new TokenValidationParameters
     ClockSkew = TimeSpan.Zero
 };
 
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -98,7 +108,15 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
 var app = builder.Build();
+
+app.UseHostFiltering();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

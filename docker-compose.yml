@@ -8,6 +8,7 @@ services:
     environment:      
       - PATH=/root/.dotnet/tools:$PATH
       - ASPNETCORE_ENVIRONMENT=Development
+      - HOSTSETTINGS__HOST=localhost
       - DBSETTINGS__HOST=db
       - DBSETTINGS__NAME=devdb
       - DBSETTINGS__USER=devuser

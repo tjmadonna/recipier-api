@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  api: 
+    build:
+      context: ./Api
+    restart: always
+    environment:
+      - HOSTSETTINGS__HOST=${DOMAIN}
+      - DBSETTINGS__HOST=db
+      - DBSETTINGS__NAME=${DB_NAME}
+      - DBSETTINGS__USER=${DB_USER}
+      - DBSETTINGS__PASSWORD=${DB_PASSWORD}
+      - JWTSETTINGS__ACCESSSECRETKEY=${JWT_ACCESS_SECRET}
+      - JWTSETTINGS__REFRESHSECRETKEY=${JWT_REFRESH_SECRET}
+      - JWTSETTINGS__ISSUER=${JWT_ISSUER}
+      - JWTSETTINGS__AUDIENCE=${JWT_AUDIENCE}
+      - JWTSETTINGS__ACCESSTOKENLIFETIME=${JWT_ACCESS_LIFETIME}
+      - JWTSETTINGS__REFRESHTOKENLIFETIME=${JWT_REFRESH_LIFETIME}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine3.17
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+
+  proxy:
+    build:
+      context: ./Proxy
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - certbot-web:/vol/www
+      - proxy-dhparams:/vol/proxy
+      - certbot-certs:/etc/letsencrypt
+    environment:
+      - DOMAIN=${DOMAIN}
+
+  certbot:
+    build:
+      context: ./Certbot
+    command: echo "Skipping..."
+    environment:
+      - EMAIL=${ACME_DEFAULT_EMAIL}
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - certbot-web:/vol/www
+      - certbot-certs:/etc/letsencrypt/
+    depends_on:
+      - proxy
+
+volumes:
+  postgres-data:
+  certbot-web:
+  proxy-dhparams:
+  certbot-certs:
