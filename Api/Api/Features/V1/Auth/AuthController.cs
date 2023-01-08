@@ -23,23 +23,19 @@ public class AuthController : ControllerBase
     {
         var authResult = await _authService.AuthenticateAsync(request.Email, request.Password);
         if (authResult.IsFailure)
-            return Unauthorized(new ApiResponse<SignInResponse>(
-                Errors: new ErrorResponse[1] {
-                    new ErrorResponse("Credentials", new string[1] {"Unable to sign in with those credentials."})
-                }
+            return Unauthorized(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to sign in with those credentials." } }
             ));
 
         var userId = authResult.Value;
         var accessToken = _authService.CreateAccessToken(userId);
         var refreshToken = await _authService.CreateRefreshTokenAsync(userId);
         if (accessToken.IsFailure || refreshToken.IsFailure)
-            return Unauthorized(new ApiResponse<SignInResponse>(
-                Errors: new ErrorResponse[1] {
-                    new ErrorResponse("Credentials", new string[1] {"Unable to sign in with those credentials."})
-                }
+            return Unauthorized(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to sign in with those credentials." } }
             ));
 
-        return Ok(new ApiResponse<SignInResponse>(
+        return Ok(new SuccessResponse<SignInResponse>(
             Data: new SignInResponse { Access = accessToken.Value, Refresh = refreshToken.Value }
         ));
     }
@@ -49,22 +45,18 @@ public class AuthController : ControllerBase
     {
         var validateResult = _authService.ValidateRefreshToken(request.Refresh);
         if (validateResult.IsFailure)
-            return Unauthorized(new ApiResponse<SignInResponse>(
-                Errors: new ErrorResponse[1] {
-                    new ErrorResponse("Credentials", new string[1] {"Unable to refresh token with those credentials."})
-                }
+            return Unauthorized(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to refresh token with those credentials." } }
             ));
 
         var userId = validateResult.Value;
         var accessToken = _authService.CreateAccessToken(userId);
         if (accessToken.IsFailure)
-            return Unauthorized(new ApiResponse<SignInResponse>(
-                Errors: new ErrorResponse[1] {
-                    new ErrorResponse("Credentials", new string[1] {"Unable to refresh token with those credentials."})
-                }
+            return Unauthorized(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to refresh token with those credentials." } }
             ));
 
-        return Ok(new ApiResponse<RefreshTokenResponse>(
+        return Ok(new SuccessResponse<RefreshTokenResponse>(
             Data: new RefreshTokenResponse { Access = accessToken.Value }
         ));
     }
@@ -74,13 +66,11 @@ public class AuthController : ControllerBase
     {
         var validateResult = await _authService.DeleteRefreshTokenAsync(request.Refresh);
         if (validateResult.IsFailure)
-            return Unauthorized(new ApiResponse<SignInResponse>(
-                Errors: new ErrorResponse[1] {
-                    new ErrorResponse("Credentials", new string[1] {"Unable to sign out with those credentials."})
-                }
+            return Unauthorized(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to sign out with those credentials." } }
             ));
 
-        return Ok(new ApiResponse<string>(
+        return Ok(new SuccessResponse<string>(
             Data: "Signed out successfully."
         ));
     }

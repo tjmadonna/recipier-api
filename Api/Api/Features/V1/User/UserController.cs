@@ -27,14 +27,12 @@ public class UserController : ControllerBase
             Password = request.Password
         });
         if (newUserResult.IsFailure)
-            return BadRequest(new ApiResponse<CreateUserResponse>(
-                Errors: new ErrorResponse[1] {
-                    new ErrorResponse("Credentials", new string[1] {"Unable to create user with those credentials."})
-                }
+            return BadRequest(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to create user with those credentials." } }
             ));
 
         var newUser = newUserResult.Value;
-        return CreatedAtAction(nameof(GetMeAsync), new ApiResponse<CreateUserResponse>(
+        return CreatedAtAction(nameof(GetMeAsync), new SuccessResponse<CreateUserResponse>(
             Data: new CreateUserResponse { Id = newUser.Id, Email = newUser.Email }
         ));
     }
@@ -45,14 +43,12 @@ public class UserController : ControllerBase
         var userId = Guid.Empty;
         var userResult = await _userService.GetUserInfoAsync(userId);
         if (userResult.IsFailure)
-            return Unauthorized(new ApiResponse<CreateUserResponse>(
-                Errors: new ErrorResponse[1] {
-                    new ErrorResponse("Credentials", new string[1] {"Unable to get user with those credentials."})
-                }
+            return Unauthorized(new FailureResponse(
+                Errors: new { Credentials = new string[1] { "Unable to get user with those credentials." } }
             ));
 
         var user = userResult.Value;
-        return Ok(new ApiResponse<GetUserResponse>(
+        return Ok(new SuccessResponse<GetUserResponse>(
             Data: new GetUserResponse { Id = user.Id, Email = user.Email }
         ));
     }
