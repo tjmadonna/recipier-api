@@ -5,6 +5,7 @@ using Api.Data.Entities;
 using Api.Events;
 using Api.Features.V1.Auth;
 using Api.Features.V1.User;
+using Api.Middleware;
 using Api.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HostFiltering;
@@ -117,6 +118,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
