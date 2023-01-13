@@ -4,6 +4,7 @@ using Api.Data;
 using Api.Data.Entities;
 using Api.Events;
 using Api.Features.V1.Auth;
+using Api.Features.V1.Core;
 using Api.Features.V1.User;
 using Api.Middleware;
 using Api.Settings;
@@ -127,6 +128,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStatusCodePagesWithReExecute("/api/v1/errors/{0}");
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
